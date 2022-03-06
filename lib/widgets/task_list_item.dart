@@ -1,6 +1,8 @@
 // ignore_for_file: prefer_final_fields, must_be_immutable
 
 import 'package:flutter/material.dart';
+import 'package:hive_to_do_app/data/local_storage.dart';
+import 'package:hive_to_do_app/main.dart';
 import 'package:hive_to_do_app/models/task_model.dart';
 import 'package:intl/intl.dart';
 
@@ -14,9 +16,11 @@ class TaskItem extends StatefulWidget {
 
 class _TaskItemState extends State<TaskItem> {
   TextEditingController _taskNameController = TextEditingController();
+  late LocalStorage _localStorage;
   @override
   void initState() {
     super.initState();
+    _localStorage = locator<LocalStorage>();
     _taskNameController.text = widget.task.name;
   }
 
@@ -34,6 +38,7 @@ class _TaskItemState extends State<TaskItem> {
         leading: GestureDetector(
           onTap: () {
             widget.task.isCompleted = !widget.task.isCompleted;
+            _localStorage.updateTask(task: widget.task);
             setState(() {});
           },
           child: Container(
@@ -64,6 +69,7 @@ class _TaskItemState extends State<TaskItem> {
                 onSubmitted: (newValue) {
                   if (newValue.length > 3) {
                     widget.task.name = newValue;
+                    _localStorage.updateTask(task: widget.task);
                   }
                 },
               ),

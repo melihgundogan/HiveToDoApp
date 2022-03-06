@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
+import 'package:hive_to_do_app/data/local_storage.dart';
+import 'package:hive_to_do_app/main.dart';
 import 'package:hive_to_do_app/models/task_model.dart';
 import 'package:hive_to_do_app/widgets/task_list_item.dart';
 
@@ -12,12 +14,15 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late List<Task> _allTasks;
+  late LocalStorage _localStorage;
 
   @override
   void initState() {
     super.initState();
+    _localStorage = locator<LocalStorage>();
     _allTasks = <Task>[];
-    _allTasks.add(Task.create(name: 'Deneme Task', createdAt: DateTime.now()));
+    //_allTasks.add(Task.create(name: 'Deneme Task', createdAt: DateTime.now()));
+    _getAllTaskFromDb();
   }
 
   @override
@@ -53,23 +58,21 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 var _oankiListeElemani = _allTasks[index];
                 return Dismissible(
-                  background: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(Icons.delete, color: Colors.grey),
-                      SizedBox(width: 8),
-                      Text('Bu görev silindi'),
-                    ],
-                  ),
-                  key: Key(_oankiListeElemani.id),
-                  onDismissed: (direction) {
-                    _allTasks.removeAt(index);
-                    setState(() {
-                      
-                    });
-                  },
-                  child: TaskItem(task: _oankiListeElemani)
-                );
+                    background: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(Icons.delete, color: Colors.grey),
+                        SizedBox(width: 8),
+                        Text('Bu görev silindi'),
+                      ],
+                    ),
+                    key: Key(_oankiListeElemani.id),
+                    onDismissed: (direction) {
+                      _allTasks.removeAt(index);
+                      _localStorage.deleteTask(task: _oankiListeElemani);
+                      setState(() {});
+                    },
+                    child: TaskItem(task: _oankiListeElemani));
               },
               itemCount: _allTasks.length,
             )
@@ -96,15 +99,17 @@ class _HomePageState extends State<HomePage> {
                   border: InputBorder.none,
                 ),
                 onSubmitted: (value) {
-                  Navigator.of(context).pop(); // veriyi aldıktan sonra task ı kapatıyor
+                  Navigator.of(context)
+                      .pop(); // veriyi aldıktan sonra task ı kapatıyor
                   if (value.length > 3) {
                     DatePicker.showTimePicker(context, showSecondsColumn: false,
-                        onConfirm: (time) {
+                        onConfirm: (time) async {
                       var newAddTask = Task.create(
                           name: value,
                           createdAt:
                               time); // bunun sayesinde yeni task olusturuldu ve saat bilgisi verildi
-                      _allTasks.add(newAddTask);
+                      _allTasks.insert(0, newAddTask);
+                      await _localStorage.addTask(task: newAddTask);
                       setState(() {});
                     });
                   }
@@ -113,5 +118,10 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         });
+  }
+
+  void _getAllTaskFromDb() async {
+    _allTasks = await _localStorage.getAllTask();
+    setState(() {});
   }
 }
