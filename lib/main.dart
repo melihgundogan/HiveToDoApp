@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive_to_do_app/data/local_storage.dart';
 import 'package:hive_to_do_app/models/task_model.dart';
 import 'package:hive_to_do_app/pages/home_page.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final locator = GetIt.instance;
 
@@ -19,13 +20,13 @@ Future<void> setupHive() async {
   Hive.registerAdapter(TaskAdapter());
   var taskBox = await Hive.openBox<Task>('tasks');
   for (var task in taskBox.values) {
-    if (task.createdAt.day != DateTime.now()) {
+    if (task.createdAt.day != DateTime.now().day) {
       taskBox.delete(task.id);
     }
   }
 }
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(
       const SystemUiOverlayStyle(statusBarColor: Colors.transparent));
@@ -41,6 +42,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       title: 'Flutter Demo',
       theme: ThemeData(
         appBarTheme: const AppBarTheme(

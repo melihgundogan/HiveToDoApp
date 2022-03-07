@@ -3,7 +3,9 @@ import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:hive_to_do_app/data/local_storage.dart';
 import 'package:hive_to_do_app/main.dart';
 import 'package:hive_to_do_app/models/task_model.dart';
+import 'package:hive_to_do_app/widgets/custom_search_delegate.dart';
 import 'package:hive_to_do_app/widgets/task_list_item.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -32,22 +34,24 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: GestureDetector(
           onTap: () {
-            _showAddTaskBottomSheet(context);
+            _showAddTaskBottomSheet(); // stateful widget icinde oldugumuzda context vermemize gerek kalmaz
           },
-          child: const Text(
-            'Bugün Neler Yapacaksın',
-            style: TextStyle(color: Colors.black),
+          child: Text(
+            AppLocalizations.of(context).title,
+            style: const TextStyle(color: Colors.black),
           ),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () {
+              _showSearchPage();
+            },
             icon: const Icon(Icons.search),
           ),
           IconButton(
             onPressed: () {
-              _showAddTaskBottomSheet(context);
+              _showAddTaskBottomSheet();
             },
             icon: const Icon(Icons.add),
           ),
@@ -60,10 +64,10 @@ class _HomePageState extends State<HomePage> {
                 return Dismissible(
                     background: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        Icon(Icons.delete, color: Colors.grey),
-                        SizedBox(width: 8),
-                        Text('Bu görev silindi'),
+                      children: [
+                        const Icon(Icons.delete, color: Colors.grey),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context).remove_task),
                       ],
                     ),
                     key: Key(_oankiListeElemani.id),
@@ -76,13 +80,14 @@ class _HomePageState extends State<HomePage> {
               },
               itemCount: _allTasks.length,
             )
-          : const Center(
-              child: Text('Görev Eklemeniz Gerekmektedir'),
+          : Center(
+              child: Text(AppLocalizations.of(context).empty_task_list),
             ),
     );
   }
 
-  void _showAddTaskBottomSheet(BuildContext context) {
+  void _showAddTaskBottomSheet() {
+    // stateful widget icindeysek BuildContext context vermemizin bir anlamı yoktur
     showModalBottomSheet(
         context: context,
         builder: (context) {
@@ -94,16 +99,17 @@ class _HomePageState extends State<HomePage> {
               title: TextField(
                 autofocus: true,
                 style: const TextStyle(fontSize: 24),
-                decoration: const InputDecoration(
-                  hintText: 'Görev nedir?',
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).add_task,
                   border: InputBorder.none,
                 ),
                 onSubmitted: (value) {
                   Navigator.of(context)
                       .pop(); // veriyi aldıktan sonra task ı kapatıyor
                   if (value.length > 3) {
-                    DatePicker.showTimePicker(context, showSecondsColumn: false,
-                        onConfirm: (time) async {
+                    DatePicker.showTimePicker(context,
+                        showSecondsColumn: false,
+                        locale: LocaleType.tr, onConfirm: (time) async {
                       var newAddTask = Task.create(
                           name: value,
                           createdAt:
@@ -123,5 +129,11 @@ class _HomePageState extends State<HomePage> {
   void _getAllTaskFromDb() async {
     _allTasks = await _localStorage.getAllTask();
     setState(() {});
+  }
+
+  Future<void> _showSearchPage() async {
+    await showSearch(
+        context: context, delegate: CustomSearchDelegate(allTasks: _allTasks));
+    _getAllTaskFromDb(); // arama yaptıktan sonra tum listeyi db den tekrar cagırıyoruz
   }
 }
